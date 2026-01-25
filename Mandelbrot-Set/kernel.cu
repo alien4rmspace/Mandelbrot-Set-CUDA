@@ -28,7 +28,7 @@ int main()
         y[i] = 2.0f;
     }
 
-    add <<<1, 32 >>> (N, x, y);
+    add <<<1, 64 >>> (N, x, y);
 
     // Prevents race conditions
     cudaDeviceSynchronize();
