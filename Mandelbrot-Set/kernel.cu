@@ -3,6 +3,7 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
+#include <iostream>
 
 cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
@@ -10,6 +11,13 @@ __global__ void addKernel(int *c, const int *a, const int *b)
 {
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
+}
+
+__global__
+void add(std::size_t N, float* x, float* y) {
+    for (std::size_t i = 0; i < N; i++) {
+        y[i] = x[i] + y[i];
+    }
 }
 
 int main()
@@ -36,6 +44,31 @@ int main()
         fprintf(stderr, "cudaDeviceReset failed!");
         return 1;
     }
+
+    int N = 1 << 20;
+    float *x, *y;
+
+    // Allocate memory for the GPU
+    cudaMallocManaged(&x, N * sizeof(float));
+    cudaMallocManaged(&y, N * sizeof(float));
+
+    for (std::size_t i = 0; i < N; i++) {
+        x[i] = 1.0f;
+        y[i] = 2.0f;
+    }
+
+    add <<<1, 1 >>> (N, x, y);
+
+    // Prevents race conditions
+    cudaDeviceSynchronize();
+
+    // Error checking
+    float maxError = 0.0f;
+    for (std::size_t i = 0; i < N; i++) {
+        maxError = fmax(maxError, fabs(y[i] - 3.0f));
+    }
+    std::cout << "Max Error: " << maxError << std::endl;
+    std::cin.get();
 
     return 0;
 }
