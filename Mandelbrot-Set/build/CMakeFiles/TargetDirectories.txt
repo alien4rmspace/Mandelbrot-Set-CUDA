@@ -1,0 +1,3 @@
+C:/Users/CIA/source/repos/Mandelbrot-Set/Mandelbrot-Set/build/CMakeFiles/sfml_test.dir
+C:/Users/CIA/source/repos/Mandelbrot-Set/Mandelbrot-Set/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/CIA/source/repos/Mandelbrot-Set/Mandelbrot-Set/build/CMakeFiles/ZERO_CHECK.dir

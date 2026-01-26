@@ -1,50 +1,19 @@
-﻿
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+﻿#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
-#include <stdio.h>
-#include <iostream>
+#include "kernel_api.h"
 
-__global__
-void add(std::size_t N, float* x, float* y) {
+__global__ void addKernel(int N, float* x, float* y) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
-    for (std::size_t i = index; i < N; i += stride) {
+
+    for (int i = index; i < N; i += stride) {
         y[i] = x[i] + y[i];
     }
 }
 
-int main()
-{
-    int N = 1<<20;
-    float *x, *y;
-
-    // Allocate memory for the GPU
-    cudaMallocManaged(&x, N * sizeof(float));
-    cudaMallocManaged(&y, N * sizeof(float));
-
-    for (std::size_t i = 0; i < N; i++) {
-        x[i] = 1.0f;
-        y[i] = 2.0f;
-    }
-
+extern "C" void launchAdd(int N, float* x, float* y) {
     int blockSize = 256;
     int numBlocks = (N + blockSize - 1) / blockSize;
-    add <<<numBlocks, blockSize >>> (N, x, y);
-
-    // Prevents race conditions
-    cudaDeviceSynchronize();
-
-    // Error checking
-    float maxError = 0.0f;
-    for (std::size_t i = 0; i < N; i++) {
-        maxError = fmax(maxError, fabs(y[i] - 3.0f));
-    }
-    std::cout << "Max Error: " << maxError << std::endl;
-
-    // Free Memory
-    cudaFree(x);
-    cudaFree(y);
-
-    return 0;
+    addKernel <<<numBlocks, blockSize >>> (N, x, y);
 }
