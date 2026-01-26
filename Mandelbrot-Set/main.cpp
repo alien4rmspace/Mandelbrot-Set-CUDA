@@ -1,3 +1,4 @@
+#include "complex_plane.h"
 #include "kernel_api.h"
 
 #include <SFML/Graphics.hpp>
@@ -7,10 +8,9 @@
 #include <iostream>
 #include <cmath>
 
-
 int main()
 {
-    int N = 1000;
+    int N = 1<<20;
     float* x, * y;
 
     cudaMallocManaged(&x, N * sizeof(float));
