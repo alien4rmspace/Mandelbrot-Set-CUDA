@@ -8,6 +8,64 @@
 #include <iostream>
 #include <cmath>
 
+
+void handleInput(sf::RenderWindow& window, ComplexPlane& complexPlane) {
+    while (const auto event = window.pollEvent())
+    {
+        // Close
+        if (event->is<sf::Event::Closed>())
+        {
+            window.close();
+            continue;
+        }
+
+        // Key pressed
+        if (const auto* key = event->getIf<sf::Event::KeyPressed>())
+        {
+            if (key->code == sf::Keyboard::Key::Escape)
+            {
+                window.close();
+            }
+            else if (key->code == sf::Keyboard::Key::Space)
+            {
+                std::cout << "loaded" << std::endl;
+            }
+            continue;
+        }
+
+        // Mouse button pressed
+        if (const auto* mouse = event->getIf<sf::Event::MouseButtonPressed>())
+        {
+            std::cout << ((mouse->button == sf::Mouse::Button::Left) ? "Left" : "Right")
+                << " mouse button was pressed" << std::endl;
+            std::cout << "mouse x: " << mouse->position.x << std::endl;
+            std::cout << "mouse y: " << mouse->position.y << std::endl;
+
+            if (mouse->button == sf::Mouse::Button::Left)
+            {
+                complexPlane.zoomIn();
+                complexPlane.setCenter({ static_cast<int>(mouse->position.x),
+                                         static_cast<int>(mouse->position.y) });
+            }
+            else if (mouse->button == sf::Mouse::Button::Right)
+            {
+                complexPlane.zoomOut();
+            }
+            continue;
+        }
+
+        // Mouse moved
+        if (const auto* moved = event->getIf<sf::Event::MouseMoved>())
+        {
+            complexPlane.setMouseLocation(
+                { static_cast<int>(moved->position.x),
+                  static_cast<int>(moved->position.y) }
+            );
+            continue;
+        }
+    }
+}
+
 int main()
 {
     int N = 1<<20;
@@ -34,22 +92,34 @@ int main()
     cudaFree(y);
 
     // ---------------------------------------------
-    sf::RenderWindow window(sf::VideoMode({ 200, 200 }), "SFML works!");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+	sf::RenderWindow window;
+	const sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+	unsigned short windowWidth = desktop.size.x / 2;
+	unsigned short windowHeight = desktop.size.y / 2;
+	window.create(
+		sf::VideoMode({ windowWidth, windowHeight }),
+		"Mandelbrot",
+		sf::Style::Default
+	);
+	sf::Font font;
+	font.openFromFile("ARIAL.ttf");
+	sf::Text text(font);
+	text.setCharacterSize(20);
 
-    while (window.isOpen())
-    {
-        while (const std::optional<sf::Event> event = window.pollEvent())
-        {
-            if (event->is<sf::Event::Closed>())
-                window.close();
-        }
+	ComplexPlane complexPlane(windowWidth, windowHeight);
 
-        window.clear();
-        window.draw(shape);
-        window.display();
-    }
+	while (window.isOpen()) {
+		handleInput(window, complexPlane);
+		complexPlane.updateRender();
+		complexPlane.loadText(text);
+
+		// Drawing Stage
+		window.clear();
+		window.draw(complexPlane);
+		window.draw(text);
+
+		window.display();
+	}
 
     return 0;
 }
