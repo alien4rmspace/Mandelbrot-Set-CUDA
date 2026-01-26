@@ -1,5 +1,8 @@
 #include "complex_plane.h"
 
+#include <nvtx3/nvToolsExt.h>
+
+
 ComplexPlane::ComplexPlane(unsigned short pixelWidth, unsigned short pixelHeight) :
 	m_pixelWidth(pixelWidth),
 	m_pixelHeight(pixelHeight),
@@ -17,6 +20,8 @@ void ComplexPlane::draw(sf::RenderTarget& target, sf::RenderStates states) const
 }
 
 void ComplexPlane::updateRender() {
+	nvtxRangePush("updateRender");
+
 	// State is calculating.
 	if (m_state == CALCULATING) {
 		sf::Clock clock;
@@ -35,6 +40,9 @@ void ComplexPlane::updateRender() {
 			}
 		}
 	}
+
+	nvtxRangePop();
+
 }
 
 void ComplexPlane::zoomIn() {
