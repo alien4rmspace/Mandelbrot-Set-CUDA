@@ -7,8 +7,8 @@
 
 __global__
 void add(std::size_t N, float* x, float* y) {
-    int index = threadIdx.x;
-    int stride = blockDim.x;
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
     for (std::size_t i = index; i < N; i += stride) {
         y[i] = x[i] + y[i];
     }
@@ -16,7 +16,7 @@ void add(std::size_t N, float* x, float* y) {
 
 int main()
 {
-    int N = 1 << 20;
+    int N = 1<<20;
     float *x, *y;
 
     // Allocate memory for the GPU
@@ -28,7 +28,9 @@ int main()
         y[i] = 2.0f;
     }
 
-    add <<<1, 64 >>> (N, x, y);
+    int blockSize = 256;
+    int numBlocks = (N + blockSize - 1) / blockSize;
+    add <<<numBlocks, blockSize >>> (N, x, y);
 
     // Prevents race conditions
     cudaDeviceSynchronize();
