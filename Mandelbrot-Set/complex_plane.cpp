@@ -1,6 +1,7 @@
 #include "complex_plane.h"
 
 #include <nvtx3/nvToolsExt.h>
+#include <cuda_runtime.h>
 
 
 ComplexPlane::ComplexPlane(unsigned short pixelWidth, unsigned short pixelHeight) :
@@ -11,8 +12,17 @@ ComplexPlane::ComplexPlane(unsigned short pixelWidth, unsigned short pixelHeight
 	m_planeCenter({ 0.f, 0.f }),
 	m_planeSize({ BASE_WIDTH, BASE_HEIGHT * m_aspectRatio }),
 	m_state(State::CALCULATING),
-	m_vArray(sf::PrimitiveType::Points, static_cast<std::size_t>(m_pixelWidth)* m_pixelHeight)
+	m_vArray(sf::PrimitiveType::Points, static_cast<std::size_t>(m_pixelWidth) * static_cast<std::size_t>(m_pixelHeight))
 {
+	m_hostIters.resize((size_t)m_pixelWidth * (size_t)m_pixelHeight);
+
+	cudaMalloc(&d_iters, m_hostIters.size() * sizeof(unsigned short));
+}
+
+ComplexPlane::~ComplexPlane() {
+	if (d_iters) {
+		cudaFree(d_iters);
+	}
 }
 
 void ComplexPlane::draw(sf::RenderTarget& target, sf::RenderStates states) const {
@@ -20,29 +30,59 @@ void ComplexPlane::draw(sf::RenderTarget& target, sf::RenderStates states) const
 }
 
 void ComplexPlane::updateRender() {
-	nvtxRangePush("updateRender");
-
 	// State is calculating.
 	if (m_state == CALCULATING) {
-		sf::Clock clock;
+		updateRenderCuda();
 
-		int incrementBy = 4;
+		//sf::Clock clock;
 
-		for (std::size_t y = 0; y < m_pixelHeight; y++) {
-			for (std::size_t x = 0; x < m_pixelWidth; x++) {
-				m_vArray[x + y * m_pixelWidth].position = sf::Vector2f( static_cast<float>(x), static_cast<float>(y) );
-				sf::Vector2i screenCoord = sf::Vector2i( x, y );
-				sf::Vector2f mapPixel = mapPixelToCoords(screenCoord);
+		//int incrementBy = 4;
 
-				std::uint8_t r, g, b = 0;
-				iterationsToRGB(countIterations(mapPixel), r, g, b);
-				m_vArray[x + y * m_pixelWidth].color = { r, g, b };
-			}
+		//for (std::size_t y = 0; y < m_pixelHeight; y++) {
+		//	for (std::size_t x = 0; x < m_pixelWidth; x++) {
+		//		m_vArray[x + y * m_pixelWidth].position = sf::Vector2f( static_cast<float>(x), static_cast<float>(y) );
+		//		sf::Vector2i screenCoord = sf::Vector2i( x, y );
+		//		sf::Vector2f mapPixel = mapPixelToCoords(screenCoord);
+
+		//		std::uint8_t r, g, b = 0;
+		//		iterationsToRGB(countIterations(mapPixel), r, g, b);
+		//		m_vArray[x + y * m_pixelWidth].color = { r, g, b };
+		//	}
+		//}
+	}
+}
+
+void ComplexPlane::updateRenderCuda() {
+	m_params.width = (int)m_pixelWidth;
+	m_params.height = (int)m_pixelHeight;
+	m_params.centerX = m_planeCenter.x;
+	m_params.centerY = m_planeCenter.y;
+	m_params.sizeX = m_planeSize.x;
+	m_params.sizeY = m_planeSize.y;
+	m_params.maxIter = 64 + m_zoomCount * 32;
+
+	launchMandelbrotIters(d_iters, &m_params);
+	cudaDeviceSynchronize();
+
+	cudaMemcpy(
+		m_hostIters.data(),
+		d_iters,
+		m_hostIters.size() * sizeof(unsigned short),
+		cudaMemcpyDeviceToHost
+	);
+
+	for (std::size_t y = 0; y < m_pixelHeight; y++) {
+		for (std::size_t x = 0; x < m_pixelWidth; x++) {
+			std::size_t idx = x + y * m_pixelWidth;
+
+			m_vArray[idx].position = sf::Vector2f(static_cast<float>(x), static_cast<float>(y));
+
+			std::uint8_t r = 0, g = 0, b = 0;
+			iterationsToRGB(static_cast<size_t>(m_hostIters[idx]), r, g, b);
+
+			m_vArray[idx].color = sf::Color(r, g, b);
 		}
 	}
-
-	nvtxRangePop();
-
 }
 
 void ComplexPlane::zoomIn() {
@@ -66,14 +106,14 @@ void ComplexPlane::zoomOut() {
 }
 
 void ComplexPlane::setCenter(sf::Vector2i mousePixel) {
-	sf::Vector2f complexCoord = mapPixelToCoords(mousePixel);
+	sf::Vector2<double> complexCoord = mapPixelToCoords(mousePixel);
 
 	m_planeCenter = complexCoord;
 	m_state = CALCULATING;
 }
 
 void ComplexPlane::setMouseLocation(sf::Vector2i mousePixel) {
-	sf::Vector2f complexCoord = mapPixelToCoords(mousePixel);
+	sf::Vector2<double> complexCoord = mapPixelToCoords(mousePixel);
 
 	m_mouseLocation = complexCoord;
 }
@@ -144,15 +184,15 @@ void ComplexPlane::iterationsToRGB(std::size_t count, std::uint8_t& r, std::uint
 	}
 }
 
-sf::Vector2f ComplexPlane::mapPixelToCoords(sf::Vector2i mousePixel) {
+sf::Vector2<double> ComplexPlane::mapPixelToCoords(sf::Vector2i mousePixel) {
 	sf::Vector2i displayPixel_x = { 0, m_pixelWidth };
 	sf::Vector2i  displayPixel_y = { m_pixelHeight, 0 };
 
-	float normalized_x = static_cast<float>(mousePixel.x - displayPixel_x.x) / (displayPixel_x.y - displayPixel_x.x);
-	float normalized_y = static_cast<float>(mousePixel.y - displayPixel_y.x) / (displayPixel_y.y - displayPixel_y.x);
+	double normalized_x = static_cast<double>(mousePixel.x - displayPixel_x.x) / (displayPixel_x.y - displayPixel_x.x);
+	double normalized_y = static_cast<double>(mousePixel.y - displayPixel_y.x) / (displayPixel_y.y - displayPixel_y.x);
 
-	float mapped_x = normalized_x * (this->m_planeSize.x) + (this->m_planeCenter.x - this->m_planeSize.x / 2);
-	float mapped_y = normalized_y * (this->m_planeSize.y) + (this->m_planeCenter.y - this->m_planeSize.y / 2);
+	double mapped_x = normalized_x * (this->m_planeSize.x) + (this->m_planeCenter.x - this->m_planeSize.x / 2);
+	double mapped_y = normalized_y * (this->m_planeSize.y) + (this->m_planeCenter.y - this->m_planeSize.y / 2);
 
-	return sf::Vector2f(mapped_x, mapped_y);
+	return sf::Vector2<double>(mapped_x, mapped_y);
 }

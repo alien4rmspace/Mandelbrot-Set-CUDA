@@ -1,4 +1,7 @@
 #pragma once
+#include "kernel_api.h"
+#include "mandelbrot_params.h"
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
@@ -15,11 +18,18 @@ const float BASE_ZOOM = 0.5;
 
 enum State { CALCULATING, DISPLAYING };
 
+extern "C" void launchMandelbrotIters(
+	unsigned short* d_iters,
+	const MandelbrotParams* params
+);
+
 class ComplexPlane : public sf::Drawable {
 public:
 	ComplexPlane(unsigned short pixelWidth, unsigned short pixelHeight);
+	~ComplexPlane();
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 	void updateRender();
+	void updateRenderCuda();
 	void zoomIn();
 	void zoomOut();
 	void setCenter(sf::Vector2i mousePixel);
@@ -32,13 +42,18 @@ private:
 	unsigned short m_zoomCount;
 	float m_aspectRatio;
 
+	std::vector<unsigned short> m_hostIters;
+	unsigned short* d_iters = nullptr;
+
+	MandelbrotParams m_params{};
+
 	State m_state;
 
 	sf::Vector2i m_pixel_size;
 
-	sf::Vector2f m_mouseLocation;
-	sf::Vector2f m_planeCenter;
-	sf::Vector2f m_planeSize;
+	sf::Vector2<double> m_mouseLocation;
+	sf::Vector2<double> m_planeCenter;
+	sf::Vector2<double> m_planeSize;
 
 	sf::VertexArray m_vArray;
 
@@ -47,6 +62,6 @@ private:
 						 std::uint8_t& r,
 						 std::uint8_t& g,
 						 std::uint8_t& b);
-	sf::Vector2f mapPixelToCoords(sf::Vector2i mousePixel);
+	sf::Vector2<double> mapPixelToCoords(sf::Vector2i mousePixel);
 };
 

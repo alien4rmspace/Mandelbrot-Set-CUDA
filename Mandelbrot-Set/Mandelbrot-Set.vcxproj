@@ -99,6 +99,7 @@
   <ItemGroup>
     <ClInclude Include="complex_plane.h" />
     <ClInclude Include="kernel_api.h" />
+    <ClInclude Include="mandelbrot_params.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
