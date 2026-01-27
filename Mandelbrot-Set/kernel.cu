@@ -28,7 +28,7 @@ __global__ void mandelbrotItersKernel(unsigned short* iters, MandelbrotParams p)
         if (zx * zx + zy * zy > 4.0f) break;
     }
 
-    iters[y * p.width + x] = (unsigned short)iter;
+    iters[y * p.width + x] = (unsigned short)iter;  // y * p.width basically a stride.
 }
 
 __global__ void addKernel(int N, float* x, float* y) {
@@ -41,9 +41,9 @@ __global__ void addKernel(int N, float* x, float* y) {
 }
 
 extern "C" void launchMandelbrotIters(unsigned short* d_iters, const MandelbrotParams* params) {
-    dim3 block(16, 16);
+    dim3 block(16, 16); // 256 threads per block
     dim3 grid(
-        (params->width + block.x - 1) / block.x,
+        (params->width + block.x - 1) / block.x,    // (1080 + 16 - 1) / 16 = 68
         (params->height + block.y - 1) / block.y
     );
 

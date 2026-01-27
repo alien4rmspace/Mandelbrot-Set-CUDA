@@ -19,10 +19,6 @@ const float BASE_ZOOM = 0.5;
 
 enum State { CALCULATING, DISPLAYING };
 
-extern "C" void launchMandelbrotIters(
-	unsigned short* d_iters,
-	const MandelbrotParams* params
-);
 
 class ComplexPlane : public sf::Drawable {
 public:
