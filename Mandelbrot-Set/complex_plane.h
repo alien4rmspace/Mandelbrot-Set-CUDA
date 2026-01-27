@@ -43,8 +43,8 @@ private:
 	int m_zoomCount;
 	float m_aspectRatio;
 
-	std::vector<unsigned short> m_hostIters;
-	unsigned short* d_iters = nullptr;
+	std::vector<unsigned short> m_hostIters;	// h or host for member of CPU.
+	unsigned short* d_iters = nullptr;	// d for member of device.
 
 	MandelbrotParams m_params{};
 

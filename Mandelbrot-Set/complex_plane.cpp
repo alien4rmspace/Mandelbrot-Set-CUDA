@@ -16,7 +16,7 @@ ComplexPlane::ComplexPlane(unsigned short pixelWidth, unsigned short pixelHeight
 {
 	m_hostIters.resize((size_t)m_pixelWidth * (size_t)m_pixelHeight);
 
-	cudaMalloc(&d_iters, m_hostIters.size() * sizeof(unsigned short));
+	cudaMalloc(&d_iters, m_hostIters.size() * sizeof(unsigned short));	// d_iters now belongs to GPU.
 }
 
 ComplexPlane::~ComplexPlane() {
@@ -59,7 +59,7 @@ void ComplexPlane::updateRenderCuda() {
 	m_params.centerY = m_planeCenter.y;
 	m_params.sizeX = m_planeSize.x;
 	m_params.sizeY = m_planeSize.y;
-	m_params.maxIter = 64 + m_zoomCount * 32;
+	m_params.maxIter = 64 * pow(1.1, m_zoomCount);	// Exponential growth.
 
 	launchMandelbrotIters(d_iters, &m_params);
 	cudaDeviceSynchronize();
