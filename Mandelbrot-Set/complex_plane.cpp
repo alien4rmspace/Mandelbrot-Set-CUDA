@@ -78,7 +78,7 @@ void ComplexPlane::updateRenderCuda() {
 			m_vArray[idx].position = sf::Vector2f(static_cast<float>(x), static_cast<float>(y));
 
 			std::uint8_t r = 0, g = 0, b = 0;
-			iterationsToRGB(static_cast<size_t>(m_hostIters[idx]), r, g, b);
+			iterationsToRGB(m_hostIters[idx], (size_t)m_params.maxIter, r, g, b);
 
 			m_vArray[idx].color = sf::Color(r, g, b);
 		}
@@ -87,9 +87,10 @@ void ComplexPlane::updateRenderCuda() {
 
 void ComplexPlane::zoomIn() {
 	m_zoomCount++;
+	m_zoomCount = std::min(m_zoomCount, 100);
 
-	float newX = BASE_WIDTH * (pow(BASE_ZOOM, m_zoomCount));
-	float newY = BASE_HEIGHT * m_aspectRatio * (pow(BASE_ZOOM, m_zoomCount));
+	double newX = BASE_WIDTH * (pow(BASE_ZOOM, m_zoomCount));
+	double newY = BASE_HEIGHT * m_aspectRatio * (pow(BASE_ZOOM, m_zoomCount));
 
 	m_planeSize = { newX, newY };
 	m_state = CALCULATING;
@@ -97,9 +98,10 @@ void ComplexPlane::zoomIn() {
 
 void ComplexPlane::zoomOut() {
 	m_zoomCount--;
+	m_zoomCount = std::min(m_zoomCount, 100);
 
-	float newX = BASE_WIDTH * (pow(BASE_ZOOM, m_zoomCount));
-	float newY = BASE_HEIGHT * m_aspectRatio * (pow(BASE_ZOOM, m_zoomCount));
+	double newX = BASE_WIDTH * (pow(BASE_ZOOM, m_zoomCount));
+	double newY = BASE_HEIGHT * m_aspectRatio * (pow(BASE_ZOOM, m_zoomCount));
 
 	m_planeSize = { newX, newY };
 	m_state = CALCULATING;
@@ -146,43 +148,36 @@ std::size_t ComplexPlane::countIterations(sf::Vector2f coord) {
 	return iterations;
 }
 
-void ComplexPlane::iterationsToRGB(std::size_t count, std::uint8_t& r, std::uint8_t& g, std::uint8_t& b) {
-	if (count >= 64) {
-		r = 0;
-		g = 0;
-		b = 0;
+void ComplexPlane::iterationsToRGB(std::size_t iter,
+	std::size_t maxIter,
+	std::uint8_t& r,
+	std::uint8_t& g,
+	std::uint8_t& b)
+{
+	if (iter >= maxIter) { r = g = b = 0; return; }
+
+	double t = double(iter) / double(maxIter); 
+
+	if (t > 0.85) { 
+		r = 255; g = 0;   b = 0; 
 	}
-	else if (count >= 54) {
-		r = 255;
-		g = 0;
-		b = 0;
+	else if (t > 0.70) {
+		r = 255; g = 255; b = 0;
 	}
-	else if (count >= 44) {
-		r = 255;
-		g = 255;
-		b = 0;
+	else if (t > 0.55) {
+		r = 255; g = 255; b = 255; 
 	}
-	else if (count >= 34) {
-		r = 255;
-		g = 255;
-		b = 255;
-	} 
-	else if (count >= 24) {
-		r = 0;
-		g = 255;
-		b = 255;
+	else if (t > 0.40) {
+		r = 0;   g = 255; b = 255; 
 	}
-	else if (count >= 14) {
-		r = 0;
-		g = 0;
-		b = 255;
+	else if (t > 0.25) { 
+		r = 0;   g = 0;   b = 255; 
 	}
-	else if (count >= 0) {
-		r = 124;
-		g = 124;
-		b = 124;
+	else { 
+		r = 124; g = 124; b = 124; 
 	}
 }
+
 
 sf::Vector2<double> ComplexPlane::mapPixelToCoords(sf::Vector2i mousePixel) {
 	sf::Vector2i displayPixel_x = { 0, m_pixelWidth };

@@ -10,6 +10,7 @@
 #include <thread>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
 
 const unsigned int MAX_ITER = 64;
 const float BASE_WIDTH = 4.0;
@@ -39,7 +40,7 @@ public:
 private:
 	unsigned short m_pixelWidth;
 	unsigned short m_pixelHeight;
-	unsigned short m_zoomCount;
+	int m_zoomCount;
 	float m_aspectRatio;
 
 	std::vector<unsigned short> m_hostIters;
@@ -58,7 +59,8 @@ private:
 	sf::VertexArray m_vArray;
 
 	std::size_t countIterations(sf::Vector2f coord);
-	void iterationsToRGB(std::size_t count,
+	void iterationsToRGB(std::size_t iter,
+						 std::size_t maxIter,
 						 std::uint8_t& r,
 						 std::uint8_t& g,
 						 std::uint8_t& b);

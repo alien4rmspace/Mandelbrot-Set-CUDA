@@ -10,18 +10,18 @@ __global__ void mandelbrotItersKernel(unsigned short* iters, MandelbrotParams p)
     if (x >= p.width || y >= p.height) return;
 
     // Map pixel -> complex plane
-    float u = (x + 0.5f) / p.width;   // [0,1]
-    float v = 1.0f - (float)y / (p.height - 1); // Y is flipped due to SFML. Top screen max imaginary.
+    double u = (x + 0.5f) / p.width;   // [0,1]
+    double v = 1.0f - (float)y / (p.height - 1); // Y is flipped due to SFML. Top screen max imaginary.
 
-    float cx = p.centerX + (u - 0.5f) * p.sizeX;
-    float cy = p.centerY + (v - 0.5f) * p.sizeY;
+    double cx = p.centerX + (u - 0.5f) * p.sizeX;
+    double cy = p.centerY + (v - 0.5f) * p.sizeY;
 
-    float zx = 0.0f, zy = 0.0f;
+    double zx = 0.0f, zy = 0.0f;
     int iter = 0;
 
     for (; iter < p.maxIter; ++iter) {
-        float zx2 = zx * zx - zy * zy + cx;
-        float zy2 = 2.0f * zx * zy + cy;
+        double zx2 = zx * zx - zy * zy + cx;
+        double zy2 = 2.0f * zx * zy + cy;
         zx = zx2;
         zy = zy2;
 
