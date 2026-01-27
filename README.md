@@ -3,7 +3,11 @@
 High-performance Mandelbrot set renderer with smooth deep-zoom support.
 
 ▶️ **20-second demo (real-time zoom):**  
-https://github.com/user-attachments/assets/783ee69f-5b4b-4cb0-802c-197ea303a602
+
+
+https://github.com/user-attachments/assets/81255ab7-adfd-4d16-9171-d43a5e2a0b2b
+
+
 ## Technical Highlights
 - GPU-parallel computation (CUDA / OpenCL / multithreaded CPU)
 - Smooth continuous zoom without frame stutter
