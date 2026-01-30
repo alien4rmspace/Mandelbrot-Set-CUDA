@@ -54,7 +54,7 @@ private:
 
 	sf::VertexArray m_vArray;
 
-	std::size_t countIterations(sf::Vector2f coord);
+	std::size_t countIterations(sf::Vector2<double> coord);
 	void iterationsToRGB(std::size_t iter,
 						 std::size_t maxIter,
 						 std::uint8_t& r,

@@ -32,23 +32,23 @@ void ComplexPlane::draw(sf::RenderTarget& target, sf::RenderStates states) const
 void ComplexPlane::updateRender() {
 	// State is calculating.
 	if (m_state == CALCULATING) {
+		nvtxRangePushA("ComplexPlane::updateRender (GPU)");
+
 		updateRenderCuda();
-
-		//sf::Clock clock;
-
-		//int incrementBy = 4;
 
 		//for (std::size_t y = 0; y < m_pixelHeight; y++) {
 		//	for (std::size_t x = 0; x < m_pixelWidth; x++) {
 		//		m_vArray[x + y * m_pixelWidth].position = sf::Vector2f( static_cast<float>(x), static_cast<float>(y) );
 		//		sf::Vector2i screenCoord = sf::Vector2i( x, y );
-		//		sf::Vector2f mapPixel = mapPixelToCoords(screenCoord);
+		//		sf::Vector2<double> mapPixel = mapPixelToCoords(screenCoord);
 
 		//		std::uint8_t r, g, b = 0;
-		//		iterationsToRGB(countIterations(mapPixel), r, g, b);
+		//		iterationsToRGB(countIterations(mapPixel), (size_t)m_params.maxIter, r, g, b);
 		//		m_vArray[x + y * m_pixelWidth].color = { r, g, b };
 		//	}
 		//}
+		nvtxRangePop();
+		m_state = DISPLAYING;
 	}
 }
 
@@ -131,7 +131,7 @@ void ComplexPlane::loadText(sf::Text& text) {
 	text.setString(stream.str());
 }
 
-std::size_t ComplexPlane::countIterations(sf::Vector2f coord) {
+std::size_t ComplexPlane::countIterations(sf::Vector2<double> coord) {
 	size_t iterations = 0;
 	const double threshold = 2.0;	// Diverge to infinity if > 2.0
 
